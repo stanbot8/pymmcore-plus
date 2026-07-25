@@ -313,7 +313,12 @@ def test_cli_logs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
 
     # instantiate core
     core = CMMCorePlus()
-    assert core.getPrimaryLogFile() == str(TEST_LOG)
+    if os.name == "nt":
+        assert Path(core.getPrimaryLogFile()).match(
+            f"{TEST_LOG.stem}-cmmcore-{os.getpid()}-*.log"
+        )
+    else:
+        assert core.getPrimaryLogFile() == str(TEST_LOG)
     core.loadSystemConfiguration()
     # it may take a moment for the log file to be written
     time.sleep(0.2)
@@ -360,6 +365,17 @@ def test_cli_info() -> None:
     assert "pymmcore-plus" in result.stdout
     assert "python" in result.stdout
     assert "api-version-info" in result.stdout
+
+
+@pytest.mark.skipif(os.name != "nt", reason="CMMCore uses sidecar logs on Windows.")
+def test_active_log_files_include_cmmcore_sidecars(tmp_path: Path) -> None:
+    main_log = tmp_path / "pymmcore-plus.log"
+    core_log = tmp_path / "pymmcore-plus-cmmcore-123-0.log"
+    rotated_core_log = tmp_path / "pymmcore-plus-cmmcore-123-0_20260725.log"
+    for path in (main_log, core_log, rotated_core_log):
+        path.touch()
+
+    assert set(_cli._active_log_files(main_log)) == {main_log, core_log}
 
 
 def test_cli_bench() -> None:
