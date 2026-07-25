@@ -14,6 +14,11 @@ if TYPE_CHECKING:
 if sys.platform == "win32":
     from concurrent_log_handler import ConcurrentRotatingFileHandler
 
+    from pymmcore_plus._logger_windows import (
+        WindowsRotatingFileHandler,
+        is_remote_path,
+    )
+
 __all__ = ["logger"]
 
 
@@ -153,7 +158,12 @@ def configure_logging(
 
         # Create a rotating file handler with a maximum file size and backup count.
         if sys.platform == "win32":
-            file_handler = ConcurrentRotatingFileHandler(
+            handler_type = (
+                ConcurrentRotatingFileHandler
+                if is_remote_path(log_file)
+                else WindowsRotatingFileHandler
+            )
+            file_handler = handler_type(
                 log_file,
                 maxBytes=file_rotation * 1_000_000,
                 backupCount=file_retention,
