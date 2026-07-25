@@ -4,12 +4,15 @@ import logging
 import os
 import sys
 from contextlib import contextmanager
-from logging.handlers import RotatingFileHandler
+from logging.handlers import BaseRotatingHandler, RotatingFileHandler
 from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
+
+if sys.platform == "win32":
+    from concurrent_log_handler import ConcurrentRotatingFileHandler
 
 __all__ = ["logger"]
 
@@ -111,6 +114,10 @@ def configure_logging(
         When to rollover to the next log file, in MegaBytes, by default `40`.
     file_retention : int
         Maximum number of log files to retain, by default `20`
+
+    Notes
+    -----
+    On Windows, file writes and file rotation are serialized between processes.
     """
     # logging.basicConfig(level=logging.DEBUG)
     root_logger = logging.getLogger()
@@ -145,18 +152,27 @@ def configure_logging(
         log_file.parent.mkdir(parents=True, exist_ok=True)
 
         # Create a rotating file handler with a maximum file size and backup count.
-        file_handler = RotatingFileHandler(
-            log_file, maxBytes=file_rotation * 1_000_000, backupCount=file_retention
-        )
+        if sys.platform == "win32":
+            file_handler = ConcurrentRotatingFileHandler(
+                log_file,
+                maxBytes=file_rotation * 1_000_000,
+                backupCount=file_retention,
+            )
+        else:
+            file_handler = RotatingFileHandler(
+                log_file,
+                maxBytes=file_rotation * 1_000_000,
+                backupCount=file_retention,
+            )
         file_handler.setLevel(file_level)
         file_handler.setFormatter(_FILE_FORMATTER)
         logger.addHandler(file_handler)
 
 
 def current_logfile(logger: logging.Logger) -> Path | None:
-    """Return the first RotatingFileHandler's baseFilename."""
+    """Return the first rotating file handler's baseFilename."""
     for handler in logger.handlers:
-        if isinstance(handler, RotatingFileHandler):
+        if isinstance(handler, BaseRotatingHandler):
             return Path(handler.baseFilename)
     return None
 
