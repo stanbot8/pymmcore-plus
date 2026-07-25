@@ -381,29 +381,36 @@ def logs(
     # in a file in the user data directory.
     from ._logger import LOG_FILE
 
-    if not LOG_FILE or not LOG_FILE.exists():
+    if not LOG_FILE:
+        print(":sparkles: [bold green]No log file.")
+        raise typer.Exit(0)
+    log_file = LOG_FILE
+    log_files = _active_log_files(log_file)
+    if not log_files:
         print(":sparkles: [bold green]No log file.")
         raise typer.Exit(0)
 
     if reveal:  # pragma: no cover
         if os.name == "nt":  # Windows
-            subprocess.run(["explorer", "/select,", str(LOG_FILE)])
+            subprocess.run(["explorer", "/select,", str(log_file)])
         elif os.name == "posix":  # macOS or Linux
-            subprocess.run(["open", "-R", str(LOG_FILE)])
+            subprocess.run(["open", "-R", str(log_file)])
 
         raise typer.Exit(0)
 
     if clear:
-        for f in LOG_FILE.parent.glob("*.log"):
+        for f in log_file.parent.glob("*.log"):
             f.unlink()
             print(f":wastebasket: [bold red] Cleared log file {f}")
         raise typer.Exit(0)
 
     if tail:
-        _tail_file(LOG_FILE)
+        _tail_files(log_files)
     else:
-        with open(LOG_FILE) as fh:
-            lines = fh.readlines()
+        lines = []
+        for log_file in log_files:
+            with open(log_file) as file:
+                lines.extend(file.readlines())
         if num:
             lines = lines[-num:]
         for line in lines:
@@ -446,18 +453,26 @@ def use(
     typer.secho(f"using {result}", fg=typer.colors.BRIGHT_GREEN)
 
 
-def _tail_file(file_path: str | Path, interval: float = 0.1) -> None:
-    with open(file_path) as file:
-        # Move the file pointer to the end
-        while True:
-            # Read new lines
-            new_lines = file.readlines()
-            if new_lines:
-                # Display the last 'num_lines' lines
-                print("".join(new_lines), end="")
+def _active_log_files(log_file: Path) -> list[Path]:
+    files = [log_file] if log_file.exists() else []
+    if os.name == "nt":
+        prefix = f"{log_file.stem}-cmmcore-"
+        for path in log_file.parent.glob(f"{prefix}*{log_file.suffix}"):
+            identifier = path.name[len(prefix) : -len(log_file.suffix)]
+            parts = identifier.split("-")
+            if len(parts) == 2 and all(part.isdigit() for part in parts):
+                files.append(path)
+    return sorted(files, key=lambda path: path.stat().st_mtime_ns)
 
-            # Sleep for a short interval before checking again
-            time.sleep(1)
+
+def _tail_files(file_paths: list[Path], interval: float = 0.1) -> None:
+    with contextlib.ExitStack() as stack:
+        files = [stack.enter_context(path.open()) for path in file_paths]
+        while True:
+            for file in files:
+                if new_lines := file.readlines():
+                    print("".join(new_lines), end="")
+            time.sleep(interval)
 
 
 @app.command()
