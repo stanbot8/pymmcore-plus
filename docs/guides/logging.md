@@ -32,9 +32,11 @@ You may also configure logging using the following environment variables:
     You can also use `mmcore logs --reveal` to open the log directory in your
     file manager.
 
-Note that both pymmcore-plus and the underlying CMMCore object will write to the log
-file. By default, [CMMCorePlus](../api/cmmcoreplus.md) will call `setPrimaryLogFile()`
-with the location of the pymmcore-plus logfile upon instantiation.
+On macOS and Linux, pymmcore-plus and CMMCore write to the same log file. On
+Windows, each CMMCore instance writes to a separate file in the same directory.
+This separation permits each logger to rotate its file safely. The CMMCore file name
+contains `cmmcore`, the process ID, and the CMMCore instance number. The
+`mmcore logs` command reads these files with the pymmcore-plus log.
 
 ## Managing logs with the CLI
 
@@ -43,7 +45,7 @@ The `mmcore` CLI provides a `logs` subcommand for managing logs.
 {{ CLI_Logs }}
 
 A particularly useful command is `mmcore logs --tail`, which will continually
-stream the current logfile to the console. This can be started in another
+stream the current log files to the console. This can be started in another
 process and left running to monitor an experiment in progress.
 
-To delete all logfiles, use `mmcore logs --clear`.
+To delete all log files, use `mmcore logs --clear`.
