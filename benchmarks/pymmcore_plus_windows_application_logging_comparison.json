@@ -1,0 +1,142 @@
+{
+  "schema_version": "1.0",
+  "benchmark_source": {
+    "path": "benchmarks/pymmcore_plus_windows_application_logging.py",
+    "sha256": "985ec6ecb5ebb0ef67a15ff54919389753108f845d82d2d6fe1283d5f201e98d"
+  },
+  "controlled_variable": "Change only the pymmcore-plus checkout.",
+  "method": {
+    "repetitions": 5,
+    "statistic": "median",
+    "platform": "Windows 10 22H2",
+    "python": "3.13.12",
+    "pymmcore": "12.5.0.75.0",
+    "useq_schema": "0.9.2",
+    "logical_cpu_count": 12,
+    "memory_bytes": 51464241152,
+    "gpu": "not used",
+    "multiprocessing_start_method": "spawn",
+    "file_rotation_mb": 40,
+    "file_retention": 20
+  },
+  "implementations": [
+    {
+      "name": "baseline",
+      "commit": "70d330d57c97d5936e4aa8efefcab6bb161c0030",
+      "result_source": "benchmarks/pymmcore_plus_windows_application_logging_70d330d.json",
+      "result_sha256": "f591514505c15d02d189292b1aa65412e419299c14e48e1fd147258d4c2f5c7c"
+    },
+    {
+      "name": "lightweight",
+      "commit": "c9375dd58a6622fe297f0c060ded1e8d8bdf7d2d",
+      "result_source": "benchmarks/pymmcore_plus_windows_application_logging_c9375dd.json",
+      "result_sha256": "276361c7b37220ff240654e74a2c9f47cda60fa357df7ae96b573e94741f0a79"
+    },
+    {
+      "name": "persistent_handles",
+      "commit": "2e9288803e096da3a50ac16e8f315fe36cc4c110",
+      "result_source": "benchmarks/pymmcore_plus_windows_application_logging_2e92888.json",
+      "result_sha256": "9958f34c8e25f9b084fa6e9b066b53bc548ec9ebd248565789a4fd46fc9fdfc8"
+    }
+  ],
+  "workloads": [
+    {
+      "name": "high_throughput_mda",
+      "application_path": "UniMMCore MDA with a Python simulated camera",
+      "processes": 1,
+      "frames_per_process": 1000,
+      "exposure_ms": [
+        0.001
+      ],
+      "results": [
+        {
+          "implementation": "baseline",
+          "median_seconds": 1.1879692999646068,
+          "relative_time_change_percent": 0.0,
+          "all_runs_correct": true,
+          "median_retained_records": 1000
+        },
+        {
+          "implementation": "lightweight",
+          "median_seconds": 1.6089071002788842,
+          "relative_time_change_percent": 35.4,
+          "all_runs_correct": true,
+          "median_retained_records": 1000
+        },
+        {
+          "implementation": "persistent_handles",
+          "median_seconds": 1.206309299916029,
+          "relative_time_change_percent": 1.5,
+          "all_runs_correct": true,
+          "median_retained_records": 1000
+        }
+      ]
+    },
+    {
+      "name": "timed_mda",
+      "application_path": "UniMMCore MDA with a Python simulated camera",
+      "processes": 1,
+      "frames_per_process": 100,
+      "exposure_ms": [
+        10,
+        50
+      ],
+      "results": [
+        {
+          "implementation": "baseline",
+          "median_seconds": 3.211382099892944,
+          "relative_time_change_percent": 0.0,
+          "all_runs_correct": true,
+          "median_retained_records": 100
+        },
+        {
+          "implementation": "lightweight",
+          "median_seconds": 3.262138799764216,
+          "relative_time_change_percent": 1.6,
+          "all_runs_correct": true,
+          "median_retained_records": 100
+        },
+        {
+          "implementation": "persistent_handles",
+          "median_seconds": 3.214664699975401,
+          "relative_time_change_percent": 0.1,
+          "all_runs_correct": true,
+          "median_retained_records": 100
+        }
+      ]
+    },
+    {
+      "name": "parallel_mda",
+      "application_path": "UniMMCore MDA with a Python simulated camera",
+      "processes": 4,
+      "frames_per_process": 25,
+      "exposure_ms": [
+        10
+      ],
+      "results": [
+        {
+          "implementation": "baseline",
+          "median_seconds": 0.48633360024541616,
+          "relative_time_change_percent": 0.0,
+          "all_runs_correct": false,
+          "median_retained_records": 83
+        },
+        {
+          "implementation": "lightweight",
+          "median_seconds": 3.4638667996041477,
+          "relative_time_change_percent": 612.2,
+          "all_runs_correct": true,
+          "median_retained_records": 100
+        },
+        {
+          "implementation": "persistent_handles",
+          "median_seconds": 0.49884579982608557,
+          "relative_time_change_percent": 2.6,
+          "all_runs_correct": true,
+          "median_retained_records": 100
+        }
+      ]
+    }
+  ],
+  "scope": "These results apply to the specified application workloads."
+}

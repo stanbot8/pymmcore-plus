@@ -1,0 +1,257 @@
+{
+  "benchmark_source": {
+    "path": "D:\\dev\\alpha-bridge-workspace\\evidence\\benchmarks\\pymmcore_plus_windows_application_logging.py",
+    "sha256": "985ec6ecb5ebb0ef67a15ff54919389753108f845d82d2d6fe1283d5f201e98d"
+  },
+  "commit": "70d330d57c97d5936e4aa8efefcab6bb161c0030",
+  "environment": {
+    "cpu_affinity": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "gpu": "not used",
+    "logical_cpu_count": 12,
+    "memory_bytes": 51464241152,
+    "platform": "Windows-10-10.0.19045-SP0",
+    "process_priority": "32",
+    "processor": "Intel64 Family 6 Model 158 Stepping 10, GenuineIntel",
+    "pymmcore": "12.5.0.75.0",
+    "python": "3.13.12",
+    "temporary_directory": "C:\\Users\\stanb\\AppData\\Local\\Temp",
+    "useq_schema": "0.9.2"
+  },
+  "implementation": "baseline",
+  "method": {
+    "file_retention": 20,
+    "file_rotation_mb": 40,
+    "parallel_processes": 4,
+    "repetitions": 5,
+    "statistic": "median"
+  },
+  "schema_version": "1.0",
+  "workloads": [
+    {
+      "all_runs_correct": true,
+      "application_path": "UniMMCore MDA with a Python simulated camera",
+      "median_acquisition_seconds": 1.1879692999646068,
+      "median_setup_seconds": 0.015184500254690647,
+      "name": "high_throughput_mda",
+      "runs": [
+        {
+          "acquisition_seconds": 1.1777657000347972,
+          "duplicate_log_records": 0,
+          "expected_log_records": 1000,
+          "frames": 1000,
+          "log_correctness": true,
+          "log_records": 1000,
+          "missing_log_records": 0,
+          "setup_seconds": 0.684542499948293,
+          "unique_log_records": 1000
+        },
+        {
+          "acquisition_seconds": 1.122323099989444,
+          "duplicate_log_records": 0,
+          "expected_log_records": 1000,
+          "frames": 1000,
+          "log_correctness": true,
+          "log_records": 1000,
+          "missing_log_records": 0,
+          "setup_seconds": 0.015184500254690647,
+          "unique_log_records": 1000
+        },
+        {
+          "acquisition_seconds": 1.2590789003297687,
+          "duplicate_log_records": 0,
+          "expected_log_records": 1000,
+          "frames": 1000,
+          "log_correctness": true,
+          "log_records": 1000,
+          "missing_log_records": 0,
+          "setup_seconds": 0.012597799766808748,
+          "unique_log_records": 1000
+        },
+        {
+          "acquisition_seconds": 1.4033722998574376,
+          "duplicate_log_records": 0,
+          "expected_log_records": 1000,
+          "frames": 1000,
+          "log_correctness": true,
+          "log_records": 1000,
+          "missing_log_records": 0,
+          "setup_seconds": 0.016273499932140112,
+          "unique_log_records": 1000
+        },
+        {
+          "acquisition_seconds": 1.1879692999646068,
+          "duplicate_log_records": 0,
+          "expected_log_records": 1000,
+          "frames": 1000,
+          "log_correctness": true,
+          "log_records": 1000,
+          "missing_log_records": 0,
+          "setup_seconds": 0.0146399000659585,
+          "unique_log_records": 1000
+        }
+      ],
+      "workload": {
+        "exposure_ms": [
+          0.001
+        ],
+        "frames_per_process": 1000,
+        "processes": 1
+      }
+    },
+    {
+      "all_runs_correct": true,
+      "application_path": "UniMMCore MDA with a Python simulated camera",
+      "median_acquisition_seconds": 3.211382099892944,
+      "median_setup_seconds": 0.005557599943131208,
+      "name": "timed_mda",
+      "runs": [
+        {
+          "acquisition_seconds": 3.2110072998329997,
+          "duplicate_log_records": 0,
+          "expected_log_records": 100,
+          "frames": 100,
+          "log_correctness": true,
+          "log_records": 100,
+          "missing_log_records": 0,
+          "setup_seconds": 0.004651200026273727,
+          "unique_log_records": 100
+        },
+        {
+          "acquisition_seconds": 3.201363699976355,
+          "duplicate_log_records": 0,
+          "expected_log_records": 100,
+          "frames": 100,
+          "log_correctness": true,
+          "log_records": 100,
+          "missing_log_records": 0,
+          "setup_seconds": 0.005942000076174736,
+          "unique_log_records": 100
+        },
+        {
+          "acquisition_seconds": 3.235175299923867,
+          "duplicate_log_records": 0,
+          "expected_log_records": 100,
+          "frames": 100,
+          "log_correctness": true,
+          "log_records": 100,
+          "missing_log_records": 0,
+          "setup_seconds": 0.004695399664342403,
+          "unique_log_records": 100
+        },
+        {
+          "acquisition_seconds": 3.211382099892944,
+          "duplicate_log_records": 0,
+          "expected_log_records": 100,
+          "frames": 100,
+          "log_correctness": true,
+          "log_records": 100,
+          "missing_log_records": 0,
+          "setup_seconds": 0.005557599943131208,
+          "unique_log_records": 100
+        },
+        {
+          "acquisition_seconds": 3.2117242999374866,
+          "duplicate_log_records": 0,
+          "expected_log_records": 100,
+          "frames": 100,
+          "log_correctness": true,
+          "log_records": 100,
+          "missing_log_records": 0,
+          "setup_seconds": 0.00604650005698204,
+          "unique_log_records": 100
+        }
+      ],
+      "workload": {
+        "exposure_ms": [
+          10,
+          50
+        ],
+        "frames_per_process": 100,
+        "processes": 1
+      }
+    },
+    {
+      "all_runs_correct": false,
+      "application_path": "UniMMCore MDA with a Python simulated camera",
+      "median_acquisition_seconds": 0.48633360024541616,
+      "name": "parallel_mda",
+      "runs": [
+        {
+          "acquisition_seconds": 0.5099027003161609,
+          "duplicate_log_records": 0,
+          "expected_log_records": 100,
+          "frames": 100,
+          "log_correctness": false,
+          "log_records": 84,
+          "missing_log_records": 16,
+          "slowest_worker_seconds": 0.3035498997196555,
+          "unique_log_records": 84
+        },
+        {
+          "acquisition_seconds": 0.4707376998849213,
+          "duplicate_log_records": 0,
+          "expected_log_records": 100,
+          "frames": 100,
+          "log_correctness": false,
+          "log_records": 80,
+          "missing_log_records": 20,
+          "slowest_worker_seconds": 0.30091220000758767,
+          "unique_log_records": 80
+        },
+        {
+          "acquisition_seconds": 0.48633360024541616,
+          "duplicate_log_records": 0,
+          "expected_log_records": 100,
+          "frames": 100,
+          "log_correctness": false,
+          "log_records": 77,
+          "missing_log_records": 23,
+          "slowest_worker_seconds": 0.30273470003157854,
+          "unique_log_records": 77
+        },
+        {
+          "acquisition_seconds": 0.46651720022782683,
+          "duplicate_log_records": 0,
+          "expected_log_records": 100,
+          "frames": 100,
+          "log_correctness": false,
+          "log_records": 83,
+          "missing_log_records": 17,
+          "slowest_worker_seconds": 0.30218479968607426,
+          "unique_log_records": 83
+        },
+        {
+          "acquisition_seconds": 0.48710500029847026,
+          "duplicate_log_records": 0,
+          "expected_log_records": 100,
+          "frames": 100,
+          "log_correctness": false,
+          "log_records": 95,
+          "missing_log_records": 5,
+          "slowest_worker_seconds": 0.30421929992735386,
+          "unique_log_records": 95
+        }
+      ],
+      "workload": {
+        "exposure_ms": [
+          10
+        ],
+        "frames_per_process": 25,
+        "processes": 4
+      }
+    }
+  ]
+}
