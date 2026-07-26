@@ -23,20 +23,20 @@
     {
       "name": "baseline",
       "commit": "70d330d57c97d5936e4aa8efefcab6bb161c0030",
-      "result_source": "benchmarks/pymmcore_plus_windows_application_logging_70d330d.json",
-      "result_sha256": "f591514505c15d02d189292b1aa65412e419299c14e48e1fd147258d4c2f5c7c"
+      "result_source": "benchmarks/pymmcore_plus_windows_application_logging_70d330d_rerun.json",
+      "result_sha256": "d3d6e353dbb22bad1ec86fb196f5be9589b2f1036500fd514cce2cd8c1645c6d"
     },
     {
       "name": "lightweight",
       "commit": "c9375dd58a6622fe297f0c060ded1e8d8bdf7d2d",
-      "result_source": "benchmarks/pymmcore_plus_windows_application_logging_c9375dd.json",
-      "result_sha256": "276361c7b37220ff240654e74a2c9f47cda60fa357df7ae96b573e94741f0a79"
+      "result_source": "benchmarks/pymmcore_plus_windows_application_logging_c9375dd_rerun.json",
+      "result_sha256": "212345baac7a654c592b5ce9fd5d2ac0a98cb3a5b5cc183d6ec3c107553c69bb"
     },
     {
-      "name": "persistent_handles",
-      "commit": "2e9288803e096da3a50ac16e8f315fe36cc4c110",
-      "result_source": "benchmarks/pymmcore_plus_windows_application_logging_2e92888.json",
-      "result_sha256": "9958f34c8e25f9b084fa6e9b066b53bc548ec9ebd248565789a4fd46fc9fdfc8"
+      "name": "persistent_complete",
+      "commit": "c830cc7f9d0c22c14e9a63863f3245f67ac91fd6",
+      "result_source": "benchmarks/pymmcore_plus_windows_application_logging_c830cc7.json",
+      "result_sha256": "4543eb15bc7ec74239d5c0d47b19ad4b08e0d28e2295d9c2508d5c26115a0ca4"
     }
   ],
   "workloads": [
@@ -51,22 +51,22 @@
       "results": [
         {
           "implementation": "baseline",
-          "median_seconds": 1.1879692999646068,
+          "median_seconds": 0.9935363000258803,
           "relative_time_change_percent": 0.0,
           "all_runs_correct": true,
           "median_retained_records": 1000
         },
         {
           "implementation": "lightweight",
-          "median_seconds": 1.6089071002788842,
-          "relative_time_change_percent": 35.4,
+          "median_seconds": 1.3432928998954594,
+          "relative_time_change_percent": 35.2,
           "all_runs_correct": true,
           "median_retained_records": 1000
         },
         {
-          "implementation": "persistent_handles",
-          "median_seconds": 1.206309299916029,
-          "relative_time_change_percent": 1.5,
+          "implementation": "persistent_complete",
+          "median_seconds": 1.0269641000777483,
+          "relative_time_change_percent": 3.4,
           "all_runs_correct": true,
           "median_retained_records": 1000
         }
@@ -84,21 +84,21 @@
       "results": [
         {
           "implementation": "baseline",
-          "median_seconds": 3.211382099892944,
+          "median_seconds": 3.2049189996905625,
           "relative_time_change_percent": 0.0,
           "all_runs_correct": true,
           "median_retained_records": 100
         },
         {
           "implementation": "lightweight",
-          "median_seconds": 3.262138799764216,
-          "relative_time_change_percent": 1.6,
+          "median_seconds": 3.237692499998957,
+          "relative_time_change_percent": 1.0,
           "all_runs_correct": true,
           "median_retained_records": 100
         },
         {
-          "implementation": "persistent_handles",
-          "median_seconds": 3.214664699975401,
+          "implementation": "persistent_complete",
+          "median_seconds": 3.2074251999147236,
           "relative_time_change_percent": 0.1,
           "all_runs_correct": true,
           "median_retained_records": 100
@@ -116,22 +116,22 @@
       "results": [
         {
           "implementation": "baseline",
-          "median_seconds": 0.48633360024541616,
+          "median_seconds": 0.49361239979043603,
           "relative_time_change_percent": 0.0,
           "all_runs_correct": false,
-          "median_retained_records": 83
+          "median_retained_records": 74
         },
         {
           "implementation": "lightweight",
-          "median_seconds": 3.4638667996041477,
-          "relative_time_change_percent": 612.2,
+          "median_seconds": 3.4584635999053717,
+          "relative_time_change_percent": 600.6,
           "all_runs_correct": true,
           "median_retained_records": 100
         },
         {
-          "implementation": "persistent_handles",
-          "median_seconds": 0.49884579982608557,
-          "relative_time_change_percent": 2.6,
+          "implementation": "persistent_complete",
+          "median_seconds": 0.4940371997654438,
+          "relative_time_change_percent": 0.1,
           "all_runs_correct": true,
           "median_retained_records": 100
         }
