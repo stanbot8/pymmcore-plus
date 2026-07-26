@@ -9,6 +9,7 @@ import weakref
 from collections import defaultdict, deque
 from contextlib import contextmanager, suppress
 from datetime import datetime
+from itertools import count
 from pathlib import Path
 from re import Pattern
 from textwrap import dedent
@@ -26,7 +27,7 @@ from typing_extensions import deprecated
 
 import pymmcore_plus._pymmcore as pymmcore
 from pymmcore_plus._discovery import find_micromanager
-from pymmcore_plus._logger import current_logfile, logger
+from pymmcore_plus._logger import current_logfile_settings, logger
 from pymmcore_plus._util import print_tabular_data
 from pymmcore_plus.mda import MDAEngine, MDARunner, PMDAEngine
 from pymmcore_plus.metadata.functions import summary_metadata
@@ -169,6 +170,14 @@ class TaggedImage(NamedTuple):
 
 
 _instance: weakref.ref[CMMCorePlus] | None = None
+_log_file_index = count()
+
+
+def _set_primary_log_file_rotation(
+    core: object, max_bytes: int, backup_count: int
+) -> None:
+    if callable(rotation := getattr(core, "setPrimaryLogFileRotation", None)):
+        rotation(max_bytes, backup_count)
 
 
 class CMMCorePlus(pymmcore.CMMCore):
@@ -250,9 +259,16 @@ class CMMCorePlus(pymmcore.CMMCore):
                     parallel = False
             self.enableFeature("ParallelDeviceInitialization", parallel)
 
-        # TODO: test this on windows ... writing to the same file may be an issue there
-        if logfile := current_logfile(logger):
+        if log_settings := current_logfile_settings(logger):
+            logfile, max_bytes, backup_count = log_settings
+            if os.name == "nt":
+                logfile = logfile.with_name(
+                    f"{logfile.stem}-cmmcore-{os.getpid()}-"
+                    f"{next(_log_file_index)}{logfile.suffix}"
+                )
             self.setPrimaryLogFile(str(logfile))
+            if os.name == "nt":
+                _set_primary_log_file_rotation(self, max_bytes, backup_count)
             logger.debug("Initialized core %s", self)
 
         # some internal state, remembering the last arguments passed to various
