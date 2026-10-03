@@ -69,8 +69,9 @@ jobs:
         python-version: ${{ matrix.python-version }}
         enable-cache: true
 
-    - run: uv sync --no-dev --group test --group ${{ matrix.add-group || 'test' 
-        }} --resolution ${{ matrix.resolution || 'highest'}}
+    - run: |-
+        uv sync --no-dev --group test --group ${{ matrix.add-group || 'test' }} --resolution ${{ matrix.resolution || 'highest'}}
+
 
     - if: matrix.nano != ''
       run: |
@@ -79,8 +80,9 @@ jobs:
 
     - uses: pymmcore-plus/setup-mm-test-adapters@main
 
-    - run: uv run coverage run -p -m pytest -v --color=yes ${{ matrix.resolution
-        == 'lowest-direct' && '-W ignore' || '' }}
+    - run: |-
+        uv run coverage run -p -m pytest -v --color=yes ${{ matrix.resolution == 'lowest-direct' && '-W ignore' || '' }}
+
 
     - name: Upload coverage
       uses: actions/upload-artifact@v7
@@ -150,7 +152,9 @@ jobs:
         uv pip uninstall pymmcore
         uv pip install pymmcore-nano
     - uses: pymmcore-plus/setup-mm-test-adapters@main
-    - run: uv run pytest -v --color=yes -W ignore
+    - run: |-
+        uv run pytest -v --color=yes -W ignore
+
 
     needs:
     - alpha_bridge_inputs
@@ -199,7 +203,9 @@ jobs:
 
     - uses: pymmcore-plus/setup-mm-test-adapters@main
 
-    - run: uv run pytest -v --color=yes -W ignore
+    - run: |-
+        uv run pytest -v --color=yes -W ignore
+
 
     needs:
     - alpha_bridge_inputs
@@ -221,7 +227,9 @@ jobs:
         enable-cache: true
 
     - name: install
-      run: uv sync --no-dev --group test-codspeed
+      run: |-
+        uv sync --no-dev --group test-codspeed
+
 
     - uses: pymmcore-plus/setup-mm-test-adapters@main
 
@@ -229,7 +237,9 @@ jobs:
       uses: CodSpeedHQ/action@v4
       with:
         mode: simulation
-        run: uv run pytest -W ignore --codspeed -v --color=yes
+        run: |-
+          uv run pytest -W ignore --codspeed -v --color=yes
+
 
     needs:
     - alpha_bridge_inputs
@@ -256,7 +266,9 @@ jobs:
           'workflow_run') && '33f4e5a83efe5a952cd2dae291d48dfa254adc2c' || 
           github.sha }}
     - name: 👷 Build
-      run: pipx run build
+      run: |-
+        pipx run build
+
 
     - name: 🚢 Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
@@ -286,7 +298,7 @@ jobs:
         AB_RUN_ID: ${{ github.run_id }}
         AB_HEAD_SHA: 33f4e5a83efe5a952cd2dae291d48dfa254adc2c
         AB_WORKFLOW_DIGEST: 
-          18375ddd7a498e24c0de10231cf3222749a02d70608b4e4243a929dcfbb46e41
+          fa4a2665ea2b51a5423bd7921b18fed19ae17ec0aa34d147c9858ada2c025eef
         AB_EVENT: ${{ github.event_name }}
         AB_SCHEDULE: ${{ github.event.schedule || '' }}
         AB_VARIABLES: ${{ toJSON(vars) }}
