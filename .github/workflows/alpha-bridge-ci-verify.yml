@@ -1,0 +1,87 @@
+name: AlphaBridge CI input verification
+on:
+  workflow_dispatch:
+    inputs:
+      probe:
+        type: string
+        required: true
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+    - run: echo 'Changed inputs reached the consumer'
+    needs:
+    - alpha_bridge_inputs
+    if: ${{ (success()) && needs.alpha_bridge_inputs.outputs.changed == 'true' 
+      }}
+  alpha_bridge_inputs:
+    name: AlphaBridge input check
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    concurrency:
+      group: alpha-bridge-inputs-${{ github.workflow }}-${{ github.sha }}-${{ 
+        github.event.schedule || github.event_name }}
+      cancel-in-progress: false
+    outputs:
+      changed: ${{ steps.identity.outputs.changed }}
+    steps:
+    - id: identity
+      name: Check source, workflow, variables, and runner inputs
+      env:
+        GH_TOKEN: ${{ github.token }}
+        AB_REPOSITORY: ${{ github.repository }}
+        AB_RUN_ID: ${{ github.run_id }}
+        AB_HEAD_SHA: ${{ github.sha }}
+        AB_EVENT: schedule
+        AB_SCHEDULE: alpha-bridge verification
+        AB_VARIABLES: ${{ toJSON(vars) }}
+        AB_INPUTS: ${{ toJSON(inputs) }}
+      shell: bash
+      run: "python3 - <<'ALPHA_BRIDGE_CI_PY'\n\"\"\"Native scheduled-CI input check,
+        embedded in the owned fork configuration.\"\"\"\n\nfrom __future__ import
+        annotations\n\nimport hashlib\nimport json\nimport os\nimport urllib.parse\n\
+        import urllib.request\n\n\ndef changed(get, *, repository, run_id, identity,
+        job_name):\n    current = get(f\"/repos/{repository}/actions/runs/{run_id}\"\
+        )\n    event = current[\"event\"]\n    query = urllib.parse.urlencode(\n \
+        \       {\n            \"head_sha\": current[\"head_sha\"],\n            \"\
+        event\": event,\n            \"per_page\": 100,\n        }\n    )\n    runs
+        = get(f\"/repos/{repository}/actions/workflows/{current['workflow_id']}/runs?{query}\"\
+        )\n    for run in runs[\"workflow_runs\"]:\n        if run[\"id\"] == run_id:\n\
+        \            continue\n        if run.get(\"head_sha\") != current[\"head_sha\"\
+        ] or run.get(\"event\") != event:\n            raise ValueError(\"provider
+        returned a different CI input identity\")\n        page = 1\n        while
+        True:\n            jobs = get(\n                f\"/repos/{repository}/actions/runs/{run['id']}/jobs?per_page=100&page={page}\"\
+        \n            )[\"jobs\"]\n            for job in jobs:\n                if
+        (\n                    job[\"name\"] == job_name\n                    and
+        job.get(\"status\") == \"completed\"\n                    and job.get(\"conclusion\"\
+        ) == \"success\"\n                    and any(\n                        step[\"\
+        name\"] == f\"AlphaBridge input identity {identity}\"\n                  \
+        \      and step.get(\"conclusion\") == \"success\"\n                     \
+        \   for step in job.get(\"steps\", [])\n                    )\n          \
+        \      ):\n                    return False\n            if len(jobs) < 100:\n\
+        \                break\n            page += 1\n    return True\n\n\ndef main():\n\
+        \    inputs = {\n        \"configuration_commit\": os.environ[\"AB_HEAD_SHA\"\
+        ],\n        \"event\": os.environ[\"AB_EVENT\"],\n        \"schedule\": os.environ[\"\
+        AB_SCHEDULE\"],\n        \"variables\": json.loads(os.environ[\"AB_VARIABLES\"\
+        ]),\n        \"inputs\": json.loads(os.environ[\"AB_INPUTS\"]),\n        \"\
+        runner_image\": [os.environ.get(\"ImageOS\", \"\"), os.environ.get(\"ImageVersion\"\
+        , \"\")],\n    }\n    identity = hashlib.sha256(json.dumps(inputs, sort_keys=True).encode()).hexdigest()\n\
+        \n    def get(path):\n        request = urllib.request.Request(\n        \
+        \    \"https://api.github.com\" + path,\n            headers={\n         \
+        \       \"Authorization\": \"Bearer \" + os.environ[\"GH_TOKEN\"],\n     \
+        \           \"Accept\": \"application/vnd.github+json\",\n               \
+        \ \"X-GitHub-Api-Version\": \"2026-03-10\",\n            },\n        )\n \
+        \       with urllib.request.urlopen(request, timeout=60) as response:\n  \
+        \          return json.load(response)\n\n    should_run = inputs[\"event\"\
+        ] != \"schedule\" or changed(\n        get,\n        repository=os.environ[\"\
+        AB_REPOSITORY\"],\n        run_id=int(os.environ[\"AB_RUN_ID\"]),\n      \
+        \  identity=identity,\n        job_name=\"AlphaBridge input check\",\n   \
+        \ )\n    with open(os.environ[\"GITHUB_OUTPUT\"], \"a\", encoding=\"utf-8\"\
+        ) as output:\n        output.write(f\"digest={identity}\\nchanged={str(should_run).lower()}\\\
+        n\")\n    print(\"CI inputs changed\" if should_run else \"CI inputs unchanged;
+        build and test jobs skipped\")\n\n\nif __name__ == \"__main__\":\n    main()\n\
+        \nALPHA_BRIDGE_CI_PY\n"
+    - name: AlphaBridge input identity ${{ steps.identity.outputs.digest }}
+      run: echo 'Input identity recorded'

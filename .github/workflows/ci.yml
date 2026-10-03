@@ -2,7 +2,7 @@ name: tests
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name != 'schedule' && (true) }}
 
 on:
   push:
@@ -11,210 +11,308 @@ on:
   pull_request: {}
   workflow_dispatch:
   schedule:
-    - cron: "0 16 * * 1" # monday at noon est
+  - cron: 0 16 * * 1     # monday at noon est
 
 jobs:
   test:
-    name: ${{ matrix.os }} py${{ matrix.python-version }} ${{ matrix.add-group }} ${{ matrix.nano }} ${{ matrix.resolution }}
+    name: ${{ matrix.os }} py${{ matrix.python-version }} ${{ matrix.add-group 
+      }} ${{ matrix.nano }} ${{ matrix.resolution }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [windows-latest, macos-latest]
-        python-version: ["3.10", "3.11", "3.13", "3.14"]
+        python-version: ['3.10', '3.11', '3.13', '3.14']
         include:
-          - os: macos-15-intel
-            python-version: "3.12"
-            add-group: "PySide6"
-          - os: macos-latest
-            python-version: "3.11"
-            add-group: "PyQt6"
-          - os: windows-latest
-            python-version: "3.13"
-            add-group: "PyQt6"
-          - os: ubuntu-latest
-            python-version: "3.12"
+        - os: macos-15-intel
+          python-version: '3.12'
+          add-group: PySide6
+        - os: macos-latest
+          python-version: '3.11'
+          add-group: PyQt6
+        - os: windows-latest
+          python-version: '3.13'
+          add-group: PyQt6
+        - os: ubuntu-latest
+          python-version: '3.12'
 
           # test pymmcore-nano
-          - os: windows-latest
-            python-version: "3.10"
-            nano: "nano"
-          - os: macos-15-intel
-            python-version: "3.12"
-            nano: "nano"
+        - os: windows-latest
+          python-version: '3.10'
+          nano: nano
+        - os: macos-15-intel
+          python-version: '3.12'
+          nano: nano
 
-          - os: windows-latest
-            python-version: "3.13"
-            resolution: "lowest-direct"
-            add-group: "PySide6"
-          - os: macos-latest
-            python-version: "3.10"
-            resolution: "lowest-direct"
-            add-group: "PyQt6"
+        - os: windows-latest
+          python-version: '3.13'
+          resolution: lowest-direct
+          add-group: PySide6
+        - os: macos-latest
+          python-version: '3.10'
+          resolution: lowest-direct
+          add-group: PyQt6
 
     env:
-      UV_NO_SYNC: "1"
+      UV_NO_SYNC: '1'
     steps:
-      - uses: actions/checkout@v7
+    - uses: actions/checkout@v7
 
-      - uses: astral-sh/setup-uv@v7
-        with:
-          python-version: ${{ matrix.python-version }}
-          enable-cache: true
+    - uses: astral-sh/setup-uv@v7
+      with:
+        python-version: ${{ matrix.python-version }}
+        enable-cache: true
 
-      - run: uv sync --no-dev --group test --group ${{ matrix.add-group || 'test' }} --resolution ${{ matrix.resolution || 'highest'}}
+    - run: uv sync --no-dev --group test --group ${{ matrix.add-group || 'test' 
+        }} --resolution ${{ matrix.resolution || 'highest'}}
 
-      - if: matrix.nano != ''
-        run: |
-          uv pip install pymmcore-nano
-          uv pip uninstall pymmcore
+    - if: matrix.nano != ''
+      run: |
+        uv pip install pymmcore-nano
+        uv pip uninstall pymmcore
 
-      - uses: pymmcore-plus/setup-mm-test-adapters@main
+    - uses: pymmcore-plus/setup-mm-test-adapters@main
 
-      - run: uv run coverage run -p -m pytest -v --color=yes ${{ matrix.resolution == 'lowest-direct' && '-W ignore' || '' }}
+    - run: uv run coverage run -p -m pytest -v --color=yes ${{ matrix.resolution
+        == 'lowest-direct' && '-W ignore' || '' }}
 
-      - name: Upload coverage
-        uses: actions/upload-artifact@v7
-        with:
-          name: covreport-${{ matrix.os }}-py${{ matrix.python-version }}-${{ matrix.add-group }}-${{ matrix.nano}}-${{ matrix.resolution }}
-          path: ./.coverage*
-          include-hidden-files: true
+    - name: Upload coverage
+      uses: actions/upload-artifact@v7
+      with:
+        name: covreport-${{ matrix.os }}-py${{ matrix.python-version }}-${{ 
+          matrix.add-group }}-${{ matrix.nano}}-${{ matrix.resolution }}
+        path: ./.coverage*
+        include-hidden-files: true
 
+    needs:
+    - alpha_bridge_inputs
+    if: ${{ (success()) && needs.alpha_bridge_inputs.outputs.changed == 'true' 
+      }}
   upload_coverage:
-    if: always()
-    needs: [test]
+    if: ${{ (always()) && needs.alpha_bridge_inputs.outputs.changed == 'true' }}
+    needs:
+    - test
+    - alpha_bridge_inputs
     uses: pyapp-kit/workflows/.github/workflows/upload-coverage.yml@v2
     secrets:
       codecov_token: ${{ secrets.CODECOV_TOKEN }}
 
   test-pymmcore-widgets:
-    name: test pymmcore-widgets (${{ matrix.os }}, ${{ matrix.qt }}${{ matrix.nano == 'nano' && ', nano' || '' }})
+    name: test pymmcore-widgets (${{ matrix.os }}, ${{ matrix.qt }}${{ 
+      matrix.nano == 'nano' && ', nano' || '' }})
     runs-on: ${{ matrix.os }}
     env:
-      UV_MANAGED_PYTHON: "1"
-      UV_NO_SYNC: "1"
+      UV_MANAGED_PYTHON: '1'
+      UV_NO_SYNC: '1'
     strategy:
       fail-fast: false
       matrix:
         os: [macos-latest, windows-latest]
         qt: [PySide6, PyQt6]
-        nano: [""]
+        nano: ['']
         include:
-          - os: windows-latest
-            qt: PyQt6
-            nano: "nano"
+        - os: windows-latest
+          qt: PyQt6
+          nano: nano
     steps:
-      - uses: actions/checkout@v7
-        with:
-          repository: pymmcore-plus/pymmcore-widgets
-          fetch-depth: 0
-      - uses: actions/checkout@v7
-        with:
-          path: pymmcore-plus
-          fetch-depth: 0
-      - uses: astral-sh/setup-uv@v7
-        with:
-          python-version: "3.13"
-          enable-cache: true
-      - uses: pyvista/setup-headless-display-action@v4
-        with:
-          qt: true
+    - uses: actions/checkout@v7
+      with:
+        repository: pymmcore-plus/pymmcore-widgets
+        fetch-depth: 0
+    - uses: actions/checkout@v7
+      with:
+        path: pymmcore-plus
+        fetch-depth: 0
+    - uses: astral-sh/setup-uv@v7
+      with:
+        python-version: '3.13'
+        enable-cache: true
+    - uses: pyvista/setup-headless-display-action@v4
+      with:
+        qt: true
 
-      - name: Install dependencies
-        run: |
-          uv sync --no-dev --group test --extra ${{ matrix.qt }}
-          uv pip install ./pymmcore-plus
-          uv pip list
-      - if: matrix.nano == 'nano'
-        run: |
-          uv pip uninstall pymmcore
-          uv pip install pymmcore-nano
-      - uses: pymmcore-plus/setup-mm-test-adapters@main
-      - run: uv run pytest -v --color=yes -W ignore
+    - name: Install dependencies
+      run: |
+        uv sync --no-dev --group test --extra ${{ matrix.qt }}
+        uv pip install ./pymmcore-plus
+        uv pip list
+    - if: matrix.nano == 'nano'
+      run: |
+        uv pip uninstall pymmcore
+        uv pip install pymmcore-nano
+    - uses: pymmcore-plus/setup-mm-test-adapters@main
+    - run: uv run pytest -v --color=yes -W ignore
 
+    needs:
+    - alpha_bridge_inputs
+    if: ${{ (success()) && needs.alpha_bridge_inputs.outputs.changed == 'true' 
+      }}
   test-pymmcore-gui:
     name: test pymmcore-gui
     runs-on: windows-latest
     env:
-      UV_MANAGED_PYTHON: "1"
-      UV_NO_SYNC: "1"
+      UV_MANAGED_PYTHON: '1'
+      UV_NO_SYNC: '1'
     strategy:
       fail-fast: false
       matrix:
         qt: [PySide6, PyQt6]
     steps:
-      - uses: actions/checkout@v7
-        with:
-          repository: pymmcore-plus/pymmcore-gui
-          fetch-depth: 0
-      - uses: actions/checkout@v7
-        with:
-          path: pymmcore-plus
-          fetch-depth: 0
-      - uses: astral-sh/setup-uv@v7
-        with:
-          python-version: "3.12"
-          enable-cache: true
-      - uses: pyvista/setup-headless-display-action@v4
-        with:
-          qt: true
+    - uses: actions/checkout@v7
+      with:
+        repository: pymmcore-plus/pymmcore-gui
+        fetch-depth: 0
+    - uses: actions/checkout@v7
+      with:
+        path: pymmcore-plus
+        fetch-depth: 0
+    - uses: astral-sh/setup-uv@v7
+      with:
+        python-version: '3.12'
+        enable-cache: true
+    - uses: pyvista/setup-headless-display-action@v4
+      with:
+        qt: true
 
-      - name: Install dependencies
-        shell: bash
-        run: |
-          if [[ "${{ matrix.qt }}" == "PySide6" ]]; then
-            uv sync --group PySide6 --no-install-package PyQt6 --no-install-package PyQt6Ads
-          else
-            uv sync
-          fi
-          uv pip install ./pymmcore-plus
-          uv pip list
+    - name: Install dependencies
+      shell: bash
+      run: |
+        if [[ "${{ matrix.qt }}" == "PySide6" ]]; then
+          uv sync --group PySide6 --no-install-package PyQt6 --no-install-package PyQt6Ads
+        else
+          uv sync
+        fi
+        uv pip install ./pymmcore-plus
+        uv pip list
 
-      - uses: pymmcore-plus/setup-mm-test-adapters@main
+    - uses: pymmcore-plus/setup-mm-test-adapters@main
 
-      - run: uv run pytest -v --color=yes -W ignore
+    - run: uv run pytest -v --color=yes -W ignore
 
+    needs:
+    - alpha_bridge_inputs
+    if: ${{ (success()) && needs.alpha_bridge_inputs.outputs.changed == 'true' 
+      }}
   benchmarks:
     runs-on: ubuntu-latest
     env:
-      UV_NO_SYNC: "1"
+      UV_NO_SYNC: '1'
     steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v7
-        with:
-          python-version: "3.12"
-          enable-cache: true
+    - uses: actions/checkout@v7
+    - uses: astral-sh/setup-uv@v7
+      with:
+        python-version: '3.12'
+        enable-cache: true
 
-      - name: install
-        run: uv sync --no-dev --group test-codspeed
+    - name: install
+      run: uv sync --no-dev --group test-codspeed
 
-      - uses: pymmcore-plus/setup-mm-test-adapters@main
+    - uses: pymmcore-plus/setup-mm-test-adapters@main
 
-      - name: Run benchmarks
-        uses: CodSpeedHQ/action@v4
-        with:
-          mode: simulation
-          run: uv run pytest -W ignore --codspeed -v --color=yes
+    - name: Run benchmarks
+      uses: CodSpeedHQ/action@v4
+      with:
+        mode: simulation
+        run: uv run pytest -W ignore --codspeed -v --color=yes
 
+    needs:
+    - alpha_bridge_inputs
+    if: ${{ (success()) && needs.alpha_bridge_inputs.outputs.changed == 'true' 
+      }}
   deploy:
-    needs: test
-    if: ${{ github.repository == 'pymmcore-plus/pymmcore-plus' && contains(github.ref, 'tags') }}
+    needs:
+    - test
+    - alpha_bridge_inputs
+    if: ${{ (github.repository == 'pymmcore-plus/pymmcore-plus' && 
+      contains(github.ref, 'tags')) && needs.alpha_bridge_inputs.outputs.changed
+      == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write
       contents: write
     steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
+    - uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
 
-      - name: 👷 Build
-        run: pipx run build
+    - name: 👷 Build
+      run: pipx run build
 
-      - name: 🚢 Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+    - name: 🚢 Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
 
-      - uses: softprops/action-gh-release@v3
-        with:
-          generate_release_notes: true
-          files: "./dist/*"
+    - uses: softprops/action-gh-release@v3
+      with:
+        generate_release_notes: true
+        files: ./dist/*
+  alpha_bridge_inputs:
+    name: AlphaBridge input check
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    concurrency:
+      group: alpha-bridge-inputs-${{ github.workflow }}-${{ github.sha }}-${{ 
+        github.event.schedule || github.event_name }}
+      cancel-in-progress: false
+    outputs:
+      changed: ${{ steps.identity.outputs.changed }}
+    steps:
+    - id: identity
+      name: Check source, workflow, variables, and runner inputs
+      env:
+        GH_TOKEN: ${{ github.token }}
+        AB_REPOSITORY: ${{ github.repository }}
+        AB_RUN_ID: ${{ github.run_id }}
+        AB_HEAD_SHA: ${{ github.sha }}
+        AB_EVENT: ${{ github.event_name }}
+        AB_SCHEDULE: ${{ github.event.schedule || '' }}
+        AB_VARIABLES: ${{ toJSON(vars) }}
+        AB_INPUTS: ${{ toJSON(inputs) }}
+      shell: bash
+      run: "python3 - <<'ALPHA_BRIDGE_CI_PY'\n\"\"\"Native scheduled-CI input check,
+        embedded in the owned fork configuration.\"\"\"\n\nfrom __future__ import
+        annotations\n\nimport hashlib\nimport json\nimport os\nimport urllib.parse\n\
+        import urllib.request\n\n\ndef changed(get, *, repository, run_id, identity,
+        job_name):\n    current = get(f\"/repos/{repository}/actions/runs/{run_id}\"\
+        )\n    event = current[\"event\"]\n    query = urllib.parse.urlencode(\n \
+        \       {\n            \"head_sha\": current[\"head_sha\"],\n            \"\
+        event\": event,\n            \"per_page\": 100,\n        }\n    )\n    runs
+        = get(f\"/repos/{repository}/actions/workflows/{current['workflow_id']}/runs?{query}\"\
+        )\n    for run in runs[\"workflow_runs\"]:\n        if run[\"id\"] == run_id:\n\
+        \            continue\n        if run.get(\"head_sha\") != current[\"head_sha\"\
+        ] or run.get(\"event\") != event:\n            raise ValueError(\"provider
+        returned a different CI input identity\")\n        page = 1\n        while
+        True:\n            jobs = get(\n                f\"/repos/{repository}/actions/runs/{run['id']}/jobs?per_page=100&page={page}\"\
+        \n            )[\"jobs\"]\n            for job in jobs:\n                if
+        (\n                    job[\"name\"] == job_name\n                    and
+        job.get(\"status\") == \"completed\"\n                    and job.get(\"conclusion\"\
+        ) == \"success\"\n                    and any(\n                        step[\"\
+        name\"] == f\"AlphaBridge input identity {identity}\"\n                  \
+        \      and step.get(\"conclusion\") == \"success\"\n                     \
+        \   for step in job.get(\"steps\", [])\n                    )\n          \
+        \      ):\n                    return False\n            if len(jobs) < 100:\n\
+        \                break\n            page += 1\n    return True\n\n\ndef main():\n\
+        \    inputs = {\n        \"configuration_commit\": os.environ[\"AB_HEAD_SHA\"\
+        ],\n        \"event\": os.environ[\"AB_EVENT\"],\n        \"schedule\": os.environ[\"\
+        AB_SCHEDULE\"],\n        \"variables\": json.loads(os.environ[\"AB_VARIABLES\"\
+        ]),\n        \"inputs\": json.loads(os.environ[\"AB_INPUTS\"]),\n        \"\
+        runner_image\": [os.environ.get(\"ImageOS\", \"\"), os.environ.get(\"ImageVersion\"\
+        , \"\")],\n    }\n    identity = hashlib.sha256(json.dumps(inputs, sort_keys=True).encode()).hexdigest()\n\
+        \n    def get(path):\n        request = urllib.request.Request(\n        \
+        \    \"https://api.github.com\" + path,\n            headers={\n         \
+        \       \"Authorization\": \"Bearer \" + os.environ[\"GH_TOKEN\"],\n     \
+        \           \"Accept\": \"application/vnd.github+json\",\n               \
+        \ \"X-GitHub-Api-Version\": \"2026-03-10\",\n            },\n        )\n \
+        \       with urllib.request.urlopen(request, timeout=60) as response:\n  \
+        \          return json.load(response)\n\n    should_run = inputs[\"event\"\
+        ] != \"schedule\" or changed(\n        get,\n        repository=os.environ[\"\
+        AB_REPOSITORY\"],\n        run_id=int(os.environ[\"AB_RUN_ID\"]),\n      \
+        \  identity=identity,\n        job_name=\"AlphaBridge input check\",\n   \
+        \ )\n    with open(os.environ[\"GITHUB_OUTPUT\"], \"a\", encoding=\"utf-8\"\
+        ) as output:\n        output.write(f\"digest={identity}\\nchanged={str(should_run).lower()}\\\
+        n\")\n    print(\"CI inputs changed\" if should_run else \"CI inputs unchanged;
+        build and test jobs skipped\")\n\n\nif __name__ == \"__main__\":\n    main()\n\
+        \nALPHA_BRIDGE_CI_PY\n"
+    - name: AlphaBridge input identity ${{ steps.identity.outputs.digest }}
+      run: echo 'Input identity recorded'
