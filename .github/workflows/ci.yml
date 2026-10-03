@@ -8,10 +8,8 @@ concurrency:
 
 on:
   push:
-    branches:
-    - main
-    tags:
-    - v*
+    branches: [main]
+    tags: [v*]
   pull_request: {}
   workflow_dispatch:
   schedule:
@@ -25,14 +23,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-        - windows-latest
-        - macos-latest
-        python-version:
-        - '3.10'
-        - '3.11'
-        - '3.13'
-        - '3.14'
+        os: [windows-latest, macos-latest]
+        python-version: ['3.10', '3.11', '3.13', '3.14']
         include:
         - os: macos-15-intel
           python-version: '3.12'
@@ -121,14 +113,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-        - macos-latest
-        - windows-latest
-        qt:
-        - PySide6
-        - PyQt6
-        nano:
-        - ''
+        os: [macos-latest, windows-latest]
+        qt: [PySide6, PyQt6]
+        nano: ['']
         include:
         - os: windows-latest
           qt: PyQt6
@@ -178,9 +165,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        qt:
-        - PySide6
-        - PyQt6
+        qt: [PySide6, PyQt6]
     steps:
     - uses: actions/checkout@v7
       with:
@@ -301,7 +286,7 @@ jobs:
         AB_RUN_ID: ${{ github.run_id }}
         AB_HEAD_SHA: 33f4e5a83efe5a952cd2dae291d48dfa254adc2c
         AB_WORKFLOW_DIGEST: 
-          3fd996915dd1a7111812a82c4a53263a67d91e9c45d1b6a9dc0f64605f0f683e
+          18375ddd7a498e24c0de10231cf3222749a02d70608b4e4243a929dcfbb46e41
         AB_EVENT: ${{ github.event_name }}
         AB_SCHEDULE: ${{ github.event.schedule || '' }}
         AB_VARIABLES: ${{ toJSON(vars) }}
