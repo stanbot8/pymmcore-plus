@@ -1,16 +1,16 @@
 {
   "definition_blob_sha1": {
-    ".github/workflows/alpha-bridge-ci-verify.yml": "21051178fb840f31162cde1a64943007a2178f3f",
-    ".github/workflows/ci.yml": "aeb859c57a5dfefaaa18b5527ada9e5333fb58ae"
+    ".github/workflows/alpha-bridge-ci-verify.yml": "d0cf89303388ac1271c908436e9f4bfe75bae884",
+    ".github/workflows/ci.yml": "359932c506f716db5ae47d092efa715c56a8ee90"
   },
   "definition_sha256": {
-    ".github/workflows/alpha-bridge-ci-verify.yml": "f1d0d506e1faf2ef9e00102fbf464fa1a74203bf3463e623621402b9de9e8a45",
-    ".github/workflows/ci.yml": "45ba01ed21dd2e1e2877a16fcd5c54e665916e1f86e11f08ba18fbd761b57147"
+    ".github/workflows/alpha-bridge-ci-verify.yml": "99e25329cff2a8ae245f2f99850472bdd82f571c3bc33fadfc5ac11b9f29cb7e",
+    ".github/workflows/ci.yml": "f95ab155248df5f833bddcd7303d475a0eb6a910b336eb25f7ab0a9d1b20c24f"
   },
-  "generator_sha256": "9fe7eb2612d4c4d8436e5a627541cad32d0dcba429639855b5a0a2af04b9729a",
+  "generator_sha256": "8bff038bcb711330ba78bf433a2923d57d4ddfeedd59b8324e44e2a59f6b0389",
   "schema": "alpha-bridge/fork-ci",
   "source_branch": "main",
-  "source_commit": "33f4e5a83efe5a952cd2dae291d48dfa254adc2c",
+  "source_commit": "d46eee043e2db8db2833da7ccbe24c6c71213e91",
   "source_repository": "pymmcore-plus/pymmcore-plus",
   "version": 1,
   "workflows": [
