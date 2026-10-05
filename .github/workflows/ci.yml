@@ -3,8 +3,8 @@ name: tests
 concurrency:
   group: ${{ github.workflow }}-${{ ((github.event_name == 'schedule' || 
     github.event_name == 'workflow_run') && 'refs/heads/main' || github.ref) }}
-  cancel-in-progress: ${{ github.event_name != 'schedule' && github.event_name 
-    != 'workflow_run' && (true) }}
+  cancel-in-progress: ${{ (github.event_name == 'workflow_dispatch' || 
+    github.run_attempt > 1) && (true) }}
 
 on:
   push:
@@ -296,16 +296,20 @@ jobs:
         GH_TOKEN: ${{ github.token }}
         AB_REPOSITORY: ${{ github.repository }}
         AB_RUN_ID: ${{ github.run_id }}
-        AB_HEAD_SHA: d46eee043e2db8db2833da7ccbe24c6c71213e91
+        AB_HEAD_SHA: ${{ (github.event_name == 'schedule' || github.event_name 
+          == 'workflow_run') && 'd46eee043e2db8db2833da7ccbe24c6c71213e91' || 
+          github.sha }}
+        AB_REF: ${{ (github.event_name == 'schedule' || github.event_name == 
+          'workflow_run') && 'refs/heads/main' || github.ref }}
         AB_WORKFLOW_DIGEST: 
-          e387bf502edf5c84c71e5ec1f226ed3776bad27e9b4177161adca042df4fe547
+          a07296fa628fdee34f83b4d41f32e12cf080250144fad90935140a10cb09f627
         AB_EVENT: ${{ github.event_name }}
         AB_SCHEDULE: ${{ github.event.schedule || '' }}
         AB_VARIABLES: ${{ toJSON(vars) }}
         AB_INPUTS: ${{ toJSON(inputs) }}
         AB_WORKFLOW_RUN: ${{ toJSON(github.event.workflow_run) }}
       shell: bash
-      run: "python3 - <<'ALPHA_BRIDGE_CI_PY'\n\"\"\"Native scheduled-CI input check,
+      run: "python3 - <<'ALPHA_BRIDGE_CI_PY'\n\"\"\"Native automatic-CI input check,
         embedded in the owned fork configuration.\"\"\"\n\nfrom __future__ import
         annotations\n\nimport base64\nimport hashlib\nimport json\nimport os\nimport
         re\nimport urllib.parse\nimport urllib.request\n\nINPUT_CHECK_NAMES = (\"\
@@ -345,47 +349,56 @@ jobs:
         \    ]\n    return not guards or any(\n        job not in guards and job.get(\"\
         conclusion\") != \"skipped\" for job in jobs\n    )\n\n\ndef changed(get,
         *, repository, run_id, identity, job_name):\n    current = get(f\"/repos/{repository}/actions/runs/{run_id}\"\
-        )\n    event = current[\"event\"]\n    query = urllib.parse.urlencode(\n \
-        \       {\n            \"branch\": current[\"head_branch\"],\n           \
-        \ \"event\": event,\n            \"per_page\": 100,\n        }\n    )\n  \
-        \  runs = get(f\"/repos/{repository}/actions/workflows/{current['workflow_id']}/runs?{query}\"\
-        )\n    for run in runs[\"workflow_runs\"]:\n        if run[\"id\"] == run_id:\n\
-        \            continue\n        if run.get(\"head_branch\") != current[\"head_branch\"\
-        ] or run.get(\"event\") != event:\n            raise ValueError(\"provider
-        returned a different CI input identity\")\n        page = 1\n        while
-        True:\n            jobs = get(\n                f\"/repos/{repository}/actions/runs/{run['id']}/jobs?per_page=100&page={page}\"\
-        \n            )[\"jobs\"]\n            for job in jobs:\n                if
-        (\n                    (\n                        job[\"name\"] in INPUT_CHECK_NAMES\n\
-        \                        if job_name in INPUT_CHECK_NAMES\n              \
-        \          else job[\"name\"] == job_name\n                    )\n       \
-        \             and job.get(\"status\") == \"completed\"\n                 \
-        \   and job.get(\"conclusion\") == \"success\"\n                    and input_identity(job)
-        == identity\n                ):\n                    return False\n      \
-        \      if len(jobs) < 100:\n                break\n            page += 1\n\
-        \    return True\n\n\ndef main():\n    inputs = {\n        \"source_commit\"\
-        : os.environ[\"AB_HEAD_SHA\"],\n        \"workflow_definition\": os.environ[\"\
-        AB_WORKFLOW_DIGEST\"],\n        \"event\": os.environ[\"AB_EVENT\"],\n   \
-        \     \"schedule\": os.environ[\"AB_SCHEDULE\"],\n        \"variables\": json.loads(os.environ[\"\
-        AB_VARIABLES\"]),\n        \"inputs\": json.loads(os.environ[\"AB_INPUTS\"\
-        ]),\n        \"runner_image\": [os.environ.get(\"ImageOS\", \"\"), os.environ.get(\"\
-        ImageVersion\", \"\")],\n        \"producer\": json.loads(os.environ.get(\"\
-        AB_WORKFLOW_RUN\", \"null\")),\n    }\n    identity = hashlib.sha256(json.dumps(inputs,
-        sort_keys=True).encode()).hexdigest()\n\n    def get(path):\n        request
-        = urllib.request.Request(\n            \"https://api.github.com\" + path,\n\
-        \            headers={\n                \"Authorization\": \"Bearer \" + os.environ[\"\
-        GH_TOKEN\"],\n                \"Accept\": \"application/vnd.github+json\"\
-        ,\n                \"X-GitHub-Api-Version\": \"2026-03-10\",\n           \
-        \ },\n        )\n        with urllib.request.urlopen(request, timeout=60)
-        as response:\n            return json.load(response)\n\n    should_run = inputs[\"\
-        event\"] not in {\"schedule\", \"workflow_run\"} or (\n        (\n       \
-        \     inputs[\"event\"] != \"workflow_run\"\n            or parent_has_work(get,
-        os.environ[\"AB_REPOSITORY\"], inputs[\"producer\"])\n        )\n        and
-        changed(\n            get,\n            repository=os.environ[\"AB_REPOSITORY\"\
-        ],\n            run_id=int(os.environ[\"AB_RUN_ID\"]),\n            identity=identity,\n\
-        \            job_name=\"CI input check\",\n        )\n    )\n    with open(os.environ[\"\
-        GITHUB_OUTPUT\"], \"a\", encoding=\"utf-8\") as output:\n        output.write(f\"\
-        digest={identity}\\nchanged={str(should_run).lower()}\\n\")\n    print(\"\
-        CI inputs changed\" if should_run else \"CI inputs unchanged; build and test
-        jobs skipped\")\n\n\nif __name__ == \"__main__\":\n    main()\n\nALPHA_BRIDGE_CI_PY\n"
+        )\n    event = current[\"event\"]\n    page = 1\n    while True:\n       \
+        \ # Filter locally: GitHub caps filtered searches at 1,000 results.\n    \
+        \    query = urllib.parse.urlencode({\"per_page\": 100, \"page\": page})\n\
+        \        runs = get(f\"/repos/{repository}/actions/workflows/{current['workflow_id']}/runs?{query}\"\
+        )\n        for run in runs[\"workflow_runs\"]:\n            if run[\"id\"\
+        ] == run_id:\n                continue\n            if run.get(\"head_branch\"\
+        ) != current[\"head_branch\"] or run.get(\"event\") != event:\n          \
+        \      continue\n            job_page = 1\n            while True:\n     \
+        \           jobs = get(\n                    f\"/repos/{repository}/actions/runs/{run['id']}/jobs?per_page=100&page={job_page}\"\
+        \n                )[\"jobs\"]\n                for job in jobs:\n        \
+        \            if (\n                        (\n                           \
+        \ job[\"name\"] in INPUT_CHECK_NAMES\n                            if job_name
+        in INPUT_CHECK_NAMES\n                            else job[\"name\"] == job_name\n\
+        \                        )\n                        and job.get(\"status\"\
+        ) == \"completed\"\n                        and job.get(\"conclusion\") ==
+        \"success\"\n                        and input_identity(job) == identity\n\
+        \                    ):\n                        return False\n          \
+        \      if len(jobs) < 100:\n                    break\n                job_page
+        += 1\n        if len(runs[\"workflow_runs\"]) < 100:\n            return True\n\
+        \        page += 1\n\n\ndef main():\n    event = os.environ[\"AB_EVENT\"]\n\
+        \    event_payload = None\n    if event not in {\"schedule\", \"workflow_run\"\
+        }:\n        with open(os.environ[\"GITHUB_EVENT_PATH\"], encoding=\"utf-8\"\
+        ) as payload_file:\n            event_payload = json.load(payload_file)\n\
+        \    inputs = {\n        \"source_commit\": os.environ[\"AB_HEAD_SHA\"],\n\
+        \        \"source_ref\": os.environ[\"AB_REF\"],\n        \"workflow_definition\"\
+        : os.environ[\"AB_WORKFLOW_DIGEST\"],\n        \"event\": event,\n       \
+        \ \"event_payload\": event_payload,\n        \"schedule\": os.environ[\"AB_SCHEDULE\"\
+        ],\n        \"variables\": json.loads(os.environ[\"AB_VARIABLES\"]),\n   \
+        \     \"inputs\": json.loads(os.environ[\"AB_INPUTS\"]),\n        \"runner_image\"\
+        : [os.environ.get(\"ImageOS\", \"\"), os.environ.get(\"ImageVersion\", \"\"\
+        )],\n        \"producer\": json.loads(os.environ.get(\"AB_WORKFLOW_RUN\",
+        \"null\")),\n    }\n    identity = hashlib.sha256(json.dumps(inputs, sort_keys=True).encode()).hexdigest()\n\
+        \n    def get(path):\n        request = urllib.request.Request(\n        \
+        \    \"https://api.github.com\" + path,\n            headers={\n         \
+        \       \"Authorization\": \"Bearer \" + os.environ[\"GH_TOKEN\"],\n     \
+        \           \"Accept\": \"application/vnd.github+json\",\n               \
+        \ \"X-GitHub-Api-Version\": \"2026-03-10\",\n            },\n        )\n \
+        \       with urllib.request.urlopen(request, timeout=60) as response:\n  \
+        \          return json.load(response)\n\n    manual = event == \"workflow_dispatch\"\
+        \ or int(os.environ[\"GITHUB_RUN_ATTEMPT\"]) > 1\n    should_run = manual
+        or (\n        (\n            inputs[\"event\"] != \"workflow_run\"\n     \
+        \       or parent_has_work(get, os.environ[\"AB_REPOSITORY\"], inputs[\"producer\"\
+        ])\n        )\n        and changed(\n            get,\n            repository=os.environ[\"\
+        AB_REPOSITORY\"],\n            run_id=int(os.environ[\"AB_RUN_ID\"]),\n  \
+        \          identity=identity,\n            job_name=\"CI input check\",\n\
+        \        )\n    )\n    with open(os.environ[\"GITHUB_OUTPUT\"], \"a\", encoding=\"\
+        utf-8\") as output:\n        output.write(f\"digest={identity}\\nchanged={str(should_run).lower()}\\\
+        n\")\n    print(\n        \"Explicit CI run requested\"\n        if manual\n\
+        \        else \"CI inputs changed\"\n        if should_run\n        else \"\
+        CI inputs unchanged; build and test jobs skipped\"\n    )\n\n\nif __name__
+        == \"__main__\":\n    main()\n\nALPHA_BRIDGE_CI_PY\n"
     - name: CI input identity ${{ steps.identity.outputs.digest }}
       run: echo 'Input identity recorded'
