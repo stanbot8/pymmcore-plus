@@ -12,8 +12,8 @@ jobs:
     - run: echo 'Changed inputs reached the consumer'
     needs:
     - alpha_bridge_inputs
-    if: ${{ (success()) && needs.alpha_bridge_inputs.outputs.changed == 'true' 
-      }}
+    if: |-
+      ${{ (success()) && needs.alpha_bridge_inputs.outputs.changed == 'true' }}
   alpha_bridge_inputs:
     name: CI input check
     runs-on: ubuntu-latest
@@ -36,7 +36,7 @@ jobs:
         AB_HEAD_SHA: ${{ github.sha }}
         AB_REF: ${{ github.ref }}
         AB_WORKFLOW_DIGEST: 
-          538b9a5f4a645070b988c8cc2bc361fe5412e9e5bb5ea5f9f39b3e269164c9cb
+          9e7584b6d4415e172fad5007a1344b8e3dd645d965e9e5e6132911cc9290e7ee
         AB_EVENT: schedule
         AB_SCHEDULE: alpha-bridge verification
         AB_VARIABLES: ${{ toJSON(vars) }}
