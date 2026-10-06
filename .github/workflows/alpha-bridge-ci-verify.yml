@@ -5,12 +5,15 @@ on:
       probe:
         type: string
         required: true
+permissions:
+  contents: write
+  issues: write
 jobs:
   call:
-    uses: ./.github/workflows/alpha-bridge-ci-probe.yml
+    uses: ./.github/workflows/crucible-call-alpha-bridge-ci-probe.yml
     with:
       probe: ${{ inputs.probe }}
     permissions:
-      contents: read
-      packages: read
+      contents: write
+      issues: write
       actions: read
