@@ -1,21 +1,25 @@
 {
+  "default_workflow_permissions": "read",
   "definition_blob_sha1": {
-    ".github/workflows/alpha-bridge-ci-verify.yml": "e967624600c97e9308ad7039f50e4e5b3480a77f",
-    ".github/workflows/ci.yml": "709fa6dde973eefdc4c2497cdd214f7f672bca38",
-    ".github/workflows/docs.yml": "1cf7a00c1715e187831821b95b468e81501d055c"
+    ".github/workflows/alpha-bridge-ci-probe.yml": "54863818654b6c3b324f47f927554ca656b0ba72",
+    ".github/workflows/alpha-bridge-ci-verify.yml": "95760790304a2bad6d6820ee35e70aafba80f356",
+    ".github/workflows/ci.yml": "d2f219789d1edd06c794f9b9ab289aba0d0e967d",
+    ".github/workflows/docs.yml": "3c4bc57c99d14cea95f4e72dfb4838a15365fdee"
   },
   "definition_sha256": {
-    ".github/workflows/alpha-bridge-ci-verify.yml": "148b49359afdc3ab3ecde8d2957b2c4f4fc171da278ede186b799ac544b662f0",
-    ".github/workflows/ci.yml": "11578fdc64d4da590f69fe35b73e6eda7925d7c63610dcdc5c91ff1ea83c5b2c",
-    ".github/workflows/docs.yml": "aee56d1da974dc98bce067194baa97d806d375c568cd1827949906f2159f8045"
+    ".github/workflows/alpha-bridge-ci-probe.yml": "0637dc006384f188f10c612b30c708f59c9d535a41c4852e3d40cf692635e8a9",
+    ".github/workflows/alpha-bridge-ci-verify.yml": "4b1ca9d589df4e671637798677985a2baf15c4607d71689df399a109b491e0a2",
+    ".github/workflows/ci.yml": "61bfbb8f40b27719af78756f691963633103ec035162bce5245fda67b0cfbe5a",
+    ".github/workflows/docs.yml": "238b0d135536cc7e14ba1e14101965807213fc1c66b15ff5c3aa24cb0290463f"
   },
-  "generator_sha256": "7b3db61baf202e3e7dd48fa25de24a19021fd832011e4b2a2f8fe59420da19d8",
+  "generator_sha256": "5a9faa0e5f7f50db58c87e3b337aa37b202117d9b2f8a1cf999b892b9c2dce77",
   "schema": "alpha-bridge/fork-ci",
   "source_branch": "main",
   "source_commit": "d46eee043e2db8db2833da7ccbe24c6c71213e91",
   "source_repository": "pymmcore-plus/pymmcore-plus",
   "version": 1,
   "workflows": [
+    ".github/workflows/alpha-bridge-ci-probe.yml",
     ".github/workflows/alpha-bridge-ci-verify.yml",
     ".github/workflows/ci.yml",
     ".github/workflows/docs.yml"

@@ -71,7 +71,7 @@ jobs:
           AB_REF: ${{ (github.event_name == 'schedule' || github.event_name == 
             'workflow_run') && 'refs/heads/main' || github.ref }}
           AB_WORKFLOW_DIGEST: 
-            16c6825df320cc6c3a1720d50d4b16111b3d90f1840cef1a7837745730005a27
+            b882c2007804cafacb1dcb54568444c4538ef12024d39865bc4d9d003802fcd0
           AB_EVENT: ${{ github.event_name }}
           AB_SCHEDULE: ${{ github.event.schedule || '' }}
           AB_VARIABLES: ${{ toJSON(vars) }}
@@ -83,19 +83,22 @@ jobs:
           annotations\n\nimport base64\nimport hashlib\nimport json\nimport os\nimport
           re\nimport urllib.parse\nimport urllib.request\n\nINPUT_CHECK_NAMES = (\"\
           CI input check\", \"AlphaBridge input check\")\nINPUT_IDENTITY_PREFIXES
-          = (\"CI input identity \", \"AlphaBridge input identity \")\n\n\ndef input_identity(job):\n\
-          \    for step in job.get(\"steps\", []):\n        if step.get(\"conclusion\"\
-          ) != \"success\":\n            continue\n        name = step.get(\"name\"\
-          , \"\")\n        for prefix in INPUT_IDENTITY_PREFIXES:\n            if
-          name.startswith(prefix):\n                identity = name.removeprefix(prefix)\n\
-          \                if re.fullmatch(r\"[0-9a-f]{64}\", identity):\n       \
-          \             return identity\n    return \"\"\n\n\ndef parent_has_work(get,
-          repository, parent):\n    if (\n        not parent\n        or parent.get(\"\
-          head_branch\") != \"alpha-bridge-ci\"\n        or parent.get(\"status\"\
-          ) != \"completed\"\n    ):\n        return True\n    sha = parent[\"head_sha\"\
-          ]\n    if re.fullmatch(r\"[0-9a-f]{40}\", sha) is None:\n        raise ValueError(\"\
-          parent workflow has no exact configuration commit\")\n    record = get(f\"\
-          /repos/{repository}\")\n    marker_file = get(f\"/repos/{repository}/contents/.github/alpha-bridge-ci.json?ref={sha}\"\
+          = (\"CI input identity \", \"AlphaBridge input identity \")\n\n\ndef is_input_check(job):\n\
+          \    \"\"\"GitHub prefixes callable job names with each caller's display
+          name.\"\"\"\n    return job.get(\"name\", \"\").rsplit(\" / \", 1)[-1] in
+          INPUT_CHECK_NAMES\n\n\ndef input_identity(job):\n    for step in job.get(\"\
+          steps\", []):\n        if step.get(\"conclusion\") != \"success\":\n   \
+          \         continue\n        name = step.get(\"name\", \"\")\n        for
+          prefix in INPUT_IDENTITY_PREFIXES:\n            if name.startswith(prefix):\n\
+          \                identity = name.removeprefix(prefix)\n                if
+          re.fullmatch(r\"[0-9a-f]{64}\", identity):\n                    return identity\n\
+          \    return \"\"\n\n\ndef parent_has_work(get, repository, parent):\n  \
+          \  if (\n        not parent\n        or parent.get(\"head_branch\") != \"\
+          alpha-bridge-ci\"\n        or parent.get(\"status\") != \"completed\"\n\
+          \    ):\n        return True\n    sha = parent[\"head_sha\"]\n    if re.fullmatch(r\"\
+          [0-9a-f]{40}\", sha) is None:\n        raise ValueError(\"parent workflow
+          has no exact configuration commit\")\n    record = get(f\"/repos/{repository}\"\
+          )\n    marker_file = get(f\"/repos/{repository}/contents/.github/alpha-bridge-ci.json?ref={sha}\"\
           )\n    marker = json.loads(base64.b64decode(marker_file[\"content\"]))\n\
           \    if (\n        record.get(\"fork\") is not True\n        or marker.get(\"\
           schema\") != \"alpha-bridge/fork-ci\"\n        or marker.get(\"source_repository\"\
@@ -113,11 +116,11 @@ jobs:
           \        values = get(\n            f\"/repos/{repository}/actions/runs/{parent['id']}/jobs?per_page=100&page={page}\"\
           \n        )[\"jobs\"]\n        jobs.extend(values)\n        if len(values)
           < 100:\n            break\n        page += 1\n    guards = [\n        job\n\
-          \        for job in jobs\n        if job.get(\"name\") in INPUT_CHECK_NAMES\n\
-          \        and job.get(\"conclusion\") == \"success\"\n        and input_identity(job)\n\
-          \    ]\n    return not guards or any(\n        job not in guards and job.get(\"\
-          conclusion\") != \"skipped\" for job in jobs\n    )\n\n\ndef changed(get,
-          *, repository, run_id, identity, job_name):\n    current = get(f\"/repos/{repository}/actions/runs/{run_id}\"\
+          \        for job in jobs\n        if is_input_check(job) and job.get(\"\
+          conclusion\") == \"success\" and input_identity(job)\n    ]\n    return
+          not guards or any(\n        job not in guards and job.get(\"conclusion\"\
+          ) != \"skipped\" for job in jobs\n    )\n\n\ndef changed(get, *, repository,
+          run_id, identity, job_name):\n    current = get(f\"/repos/{repository}/actions/runs/{run_id}\"\
           )\n    event = current[\"event\"]\n    page = 1\n    while True:\n     \
           \   # Filter locally: GitHub caps filtered searches at 1,000 results.\n\
           \        query = urllib.parse.urlencode({\"per_page\": 100, \"page\": page})\n\
@@ -129,18 +132,18 @@ jobs:
           \               jobs = get(\n                    f\"/repos/{repository}/actions/runs/{run['id']}/jobs?per_page=100&page={job_page}\"\
           \n                )[\"jobs\"]\n                for job in jobs:\n      \
           \              if (\n                        (\n                       \
-          \     job[\"name\"] in INPUT_CHECK_NAMES\n                            if
-          job_name in INPUT_CHECK_NAMES\n                            else job[\"name\"\
-          ] == job_name\n                        )\n                        and job.get(\"\
-          status\") == \"completed\"\n                        and job.get(\"conclusion\"\
-          ) == \"success\"\n                        and input_identity(job) == identity\n\
-          \                    ):\n                        return False\n        \
-          \        if len(jobs) < 100:\n                    break\n              \
-          \  job_page += 1\n        if len(runs[\"workflow_runs\"]) < 100:\n     \
-          \       return True\n        page += 1\n\n\ndef main():\n    event = os.environ[\"\
-          AB_EVENT\"]\n    event_payload = None\n    if event not in {\"schedule\"\
-          , \"workflow_run\"}:\n        with open(os.environ[\"GITHUB_EVENT_PATH\"\
-          ], encoding=\"utf-8\") as payload_file:\n            event_payload = json.load(payload_file)\n\
+          \     is_input_check(job)\n                            if job_name in INPUT_CHECK_NAMES\n\
+          \                            else job[\"name\"] == job_name\n          \
+          \              )\n                        and job.get(\"status\") == \"\
+          completed\"\n                        and job.get(\"conclusion\") == \"success\"\
+          \n                        and input_identity(job) == identity\n        \
+          \            ):\n                        return False\n                if
+          len(jobs) < 100:\n                    break\n                job_page +=
+          1\n        if len(runs[\"workflow_runs\"]) < 100:\n            return True\n\
+          \        page += 1\n\n\ndef main():\n    event = os.environ[\"AB_EVENT\"\
+          ]\n    event_payload = None\n    if event not in {\"schedule\", \"workflow_run\"\
+          }:\n        with open(os.environ[\"GITHUB_EVENT_PATH\"], encoding=\"utf-8\"\
+          ) as payload_file:\n            event_payload = json.load(payload_file)\n\
           \    inputs = {\n        \"source_commit\": os.environ[\"AB_HEAD_SHA\"],\n\
           \        \"source_ref\": os.environ[\"AB_REF\"],\n        \"workflow_definition\"\
           : os.environ[\"AB_WORKFLOW_DIGEST\"],\n        \"event\": event,\n     \
