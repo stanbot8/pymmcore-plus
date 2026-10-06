@@ -36,11 +36,12 @@ jobs:
         AB_HEAD_SHA: ${{ github.sha }}
         AB_REF: ${{ github.ref }}
         AB_WORKFLOW_DIGEST: 
-          aeb0c6e2caf9e7aa08ace6ecf5bf2a46ae50d577b223dd23f9d645eb0c1d6792
+          7e9bc4b21f9c7f54a4a8af26491b2854ca940d73f876d4f8cc37686a3ee72f9b
         AB_EVENT: schedule
         AB_SCHEDULE: alpha-bridge verification
         AB_VARIABLES: ${{ toJSON(vars) }}
         AB_INPUTS: ${{ toJSON(inputs) }}
+        AB_DEFAULT_PERMISSIONS: read
         AB_WORKFLOW_RUN: ${{ toJSON(github.event.workflow_run) }}
       shell: bash
       run: "python3 - <<'ALPHA_BRIDGE_CI_PY'\n\"\"\"Native automatic-CI input check,
@@ -113,10 +114,11 @@ jobs:
         AB_WORKFLOW_DIGEST\"],\n        \"event\": event,\n        \"event_payload\"\
         : event_payload,\n        \"schedule\": os.environ[\"AB_SCHEDULE\"],\n   \
         \     \"variables\": json.loads(os.environ[\"AB_VARIABLES\"]),\n        \"\
-        inputs\": json.loads(os.environ[\"AB_INPUTS\"]),\n        \"runner_image\"\
-        : [os.environ.get(\"ImageOS\", \"\"), os.environ.get(\"ImageVersion\", \"\"\
-        )],\n        \"producer\": json.loads(os.environ.get(\"AB_WORKFLOW_RUN\",
-        \"null\")),\n    }\n    identity = hashlib.sha256(json.dumps(inputs, sort_keys=True).encode()).hexdigest()\n\
+        inputs\": json.loads(os.environ[\"AB_INPUTS\"]),\n        \"default_workflow_permissions\"\
+        : os.environ[\"AB_DEFAULT_PERMISSIONS\"],\n        \"runner_image\": [os.environ.get(\"\
+        ImageOS\", \"\"), os.environ.get(\"ImageVersion\", \"\")],\n        \"producer\"\
+        : json.loads(os.environ.get(\"AB_WORKFLOW_RUN\", \"null\")),\n    }\n    identity
+        = hashlib.sha256(json.dumps(inputs, sort_keys=True).encode()).hexdigest()\n\
         \n    def get(path):\n        request = urllib.request.Request(\n        \
         \    \"https://api.github.com\" + path,\n            headers={\n         \
         \       \"Authorization\": \"Bearer \" + os.environ[\"GH_TOKEN\"],\n     \
